@@ -2,6 +2,8 @@
 
 OpenSCAD case for the Cowon Plenue D (53.3 x 77.3 x 15.0 mm), printable in PLA on an FDM printer.
 
+The outer frame is rotated 20 degrees against the player, in the style of early Astell&Kern players, and its four edges arc outward. Each corner of the player sits close to one frame edge. The four M2 screws sit in the triangular spaces left at the frame corners. The headphone and USB openings run straight along the player's axes. The button plungers slide in guides perpendicular to the frame.
+
 - `plenue_d_case.scad`: parametric model. Set `part` to `back`, `front`, `buttons` or `assembly`.
 - `stl/`: exported parts (`back.stl`, `front.stl`, `buttons.stl`).
 
@@ -9,23 +11,31 @@ OpenSCAD case for the Cowon Plenue D (53.3 x 77.3 x 15.0 mm), printable in PLA o
 
 - Back shell: print back face down, no supports.
 - Front shell: print screen face down, no supports.
-- Buttons: one power cap and five side caps, as laid out in `buttons.stl`, no supports.
+- Buttons: one power plunger and three side plungers. They print lying flat, no supports.
 - 0.2 mm layers, 3 perimeters, 20 % infill.
 
 ## Assembly
 
-1. Drop the button caps, flange inward, into the pockets of the back shell.
-2. Put the player in, screen up, top edge (jack + power key) toward the jack hole.
+1. Drop the plungers, flange inward, into the guides of the back shell.
+2. Put the player in, screen up, top edge (jack + power key) toward the jack opening.
 3. Put the front shell on top.
 4. Drive 4x M2 x 12 screws from the back. They self-tap into the front shell (1.7 mm pilot).
 
-The micro USB opening is on the bottom edge. The microSD slot is covered on purpose. Open the case to swap cards.
+The microSD slot is covered on purpose. Open the case to swap cards.
+
+## Main shape parameters
+
+- `tilt`: frame rotation
+- `bulge`: how far each edge arcs out
+- `frame_off`: grows or shrinks the frame
+- `corner_r`: corner rounding
+- `screw_inset`, `screw_tr_x`: screw positions. The top-right screw sits left of the power key guide.
 
 ## Check before printing
 
 The body size, power key and jack positions are caliper measurements. The following are estimates. Measure them on the player and update the parameters if needed:
 
-- `side_keys`, `side_key_z`: side key positions on the right edge
+- `side_keys`, `side_key_z`: side key positions on the right edge, read off the sketch
 - `usb_x`, `usb_z`: micro USB position
 - `window_inset`: screen window border
 - `dev_r`: body corner radius
