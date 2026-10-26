@@ -42,11 +42,14 @@ jack_z = ((dev.z - 2.7) + 6.7) / 2;     // 9.5
 usb_x = dev.x / 2;
 usb_z = dev.z / 2;
 
-// Side keys on the right edge: [y center, width]. Taken from the sketch. VERIFY.
+// Side keys on the right edge, one guide each: [y center, width]. VERIFY.
+// At 9 mm spacing the guides sit 9 * cos(tilt) apart, which limits the width.
 side_keys = [
-    [53.4, 7.0],
-    [34.7, 9.0],
-    [13.9, 8.0],
+    [62.0, 6.0],   // vol +
+    [53.0, 6.0],   // vol -
+    [37.0, 6.0],   // prev
+    [28.0, 6.0],   // play / pause
+    [19.0, 6.0],   // next
 ];
 side_key_z = dev.z / 2;     // VERIFY
 side_key_h = 5.0;           // cap height along z
@@ -81,7 +84,7 @@ screw_len      = 12;    // M2 x 12
 
 // Button caps: plungers sliding in guides perpendicular to the frame.
 btn_clr     = 0.25;   // plunger to guide, per side
-flange      = 0.9;    // flange overhang on each side of the plunger (in plane)
+flange      = 0.7;    // flange overhang on each side of the plunger (in plane)
 flange_t    = 0.9;    // minimum flange thickness along the guide
 btn_travel  = 0.5;    // free play the pocket allows outward
 btn_proud   = 1.0;    // plunger sticking out past the frame

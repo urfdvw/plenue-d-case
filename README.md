@@ -11,7 +11,7 @@ The outer frame is rotated 20 degrees against the player, in the style of early 
 
 - Back shell: print back face down, no supports.
 - Front shell: print screen face down, no supports.
-- Buttons: one power plunger and three side plungers. They print lying flat, no supports.
+- Buttons: one power plunger and five side plungers. They print lying flat, no supports.
 - 0.2 mm layers, 3 perimeters, 20 % infill.
 
 ## Assembly
@@ -35,7 +35,7 @@ The microSD slot is covered on purpose. Open the case to swap cards.
 
 The body size, power key and jack positions are caliper measurements. The following are estimates. Measure them on the player and update the parameters if needed:
 
-- `side_keys`, `side_key_z`: side key positions on the right edge, read off the sketch
+- `side_keys`, `side_key_z`: positions of the five side keys on the right edge
 - `usb_x`, `usb_z`: micro USB position
 - `window_inset`: screen window border
 - `dev_r`: body corner radius
