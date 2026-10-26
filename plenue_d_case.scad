@@ -60,8 +60,8 @@ plate   = 1.6;    // front / back plate
 split_z = 7.5;    // seam height in device z; every edge opening straddles it
 
 // Outer frame
-tilt      = 20;    // frame rotation against the player, counter-clockwise from the front
-frame_off = -1.0;  // frame chords relative to the rectangle that touches the cavity corners
+tilt      = 10;    // frame rotation against the player, counter-clockwise from the front
+frame_off = 0.0;   // frame chords relative to the rectangle that touches the cavity corners
 bulge     = 4.5;   // how far each edge arcs out past its chord
 corner_r  = 1.5;   // rounding of the four frame corners
 
@@ -74,8 +74,11 @@ usb_open    = [12.0, 7.5];  // x, z; room for the plug overmold
 usb_open_r  = 1.5;
 
 // M2 screws: inserted from the back, threading into the front shell.
-screw_inset    = 4.5;   // from the frame corners, along both frame axes
-screw_tr_x     = 19.0;  // top-right screw moved left (x') to clear the power key guide
+// The top-right and bottom-left corner gaps are too narrow at this tilt, so those
+// two screws move along the top / bottom edge (frame coordinates; retune with tilt).
+screw_inset    = 4.5;   // top-left and bottom-right: from the frame corners, both axes
+screw_tr       = [15.0, 41.0];    // left of the power key guide
+screw_bl       = [-22.0, -40.2];  // left of the USB opening
 screw_clear_d  = 2.4;
 screw_pilot_d  = 1.7;   // self-tapping into PLA
 screw_head_d   = 4.2;
@@ -112,9 +115,9 @@ u_right = rot(tilt, [1, 0]);
 
 screw_frame = [
     [-(frame_w / 2 - screw_inset),  frame_h / 2 - screw_inset],
-    [screw_tr_x,                    frame_h / 2 - screw_inset],
+    screw_tr,
     [ frame_w / 2 - screw_inset,  -(frame_h / 2 - screw_inset)],
-    [-(frame_w / 2 - screw_inset), -(frame_h / 2 - screw_inset)],
+    screw_bl,
 ];
 screw_pos = [for (p = screw_frame) to_dev(p)];
 

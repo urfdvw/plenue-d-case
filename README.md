@@ -2,7 +2,7 @@
 
 OpenSCAD case for the Cowon Plenue D (53.3 x 77.3 x 15.0 mm), printable in PLA on an FDM printer.
 
-The outer frame is rotated 20 degrees against the player, in the style of early Astell&Kern players, and its four edges arc outward. Each corner of the player sits close to one frame edge. The four M2 screws sit in the triangular spaces left at the frame corners. The headphone and USB openings run straight along the player's axes. The button plungers slide in guides perpendicular to the frame.
+The outer frame is rotated 10 degrees against the player, in the style of early Astell&Kern players, and its four edges arc outward. Each corner of the player sits close to one frame edge. The four M2 screws sit in the gaps between the player and the frame corners. The headphone and USB openings run straight along the player's axes. The button plungers slide in guides perpendicular to the frame.
 
 - `plenue_d_case.scad`: parametric model. Set `part` to `back`, `front`, `buttons` or `assembly`.
 - `stl/`: exported parts (`back.stl`, `front.stl`, `buttons.stl`).
@@ -29,7 +29,7 @@ The microSD slot is covered on purpose. Open the case to swap cards.
 - `bulge`: how far each edge arcs out
 - `frame_off`: grows or shrinks the frame
 - `corner_r`: corner rounding
-- `screw_inset`, `screw_tr_x`: screw positions. The top-right screw sits left of the power key guide.
+- `screw_inset`, `screw_tr`, `screw_bl`: screw positions. The top-right and bottom-left screws are placed by hand and need retuning when `tilt` changes.
 
 ## Check before printing
 
