@@ -40,14 +40,14 @@ usb_z = dev.z / 2;
 
 // Side keys on the right edge: [y center, length along y]. VERIFY all.
 side_keys = [
-    [62.0, 6.0],   // vol +
-    [53.0, 6.0],   // vol -
-    [37.0, 6.0],   // prev
-    [28.0, 6.0],   // play / pause
-    [19.0, 6.0],   // next
+    [62.0, 7.0],   // vol +
+    [53.0, 7.0],   // vol -
+    [37.0, 7.0],   // prev
+    [28.0, 7.0],   // play / pause
+    [19.0, 7.0],   // next
 ];
 side_key_z = dev.z / 2;     // VERIFY
-side_key_h = 3.0;           // cap height along z
+side_key_h = 5.0;           // cap height along z
 
 // ---------------------------------------------------------------- case
 fit     = 0.3;    // clearance between device and cavity, per side
@@ -66,6 +66,7 @@ usb_open_r  = 1.5;
 // M2 screws: inserted from the back, threading into the front shell.
 screw_off      = 1.8;   // screw axis offset outward from each cavity corner (x and y)
 lug_r          = 3.2;
+lug_fillet     = 4.0;   // concave blend between the corner lugs and the walls
 screw_clear_d  = 2.4;
 screw_pilot_d  = 1.7;   // self-tapping into PLA
 screw_head_d   = 4.2;
@@ -74,11 +75,11 @@ screw_len      = 12;    // M2 x 12
 
 // Button caps
 btn_clr     = 0.25;   // stem to hole, per side
-flange      = 1.2;    // flange overhang around the stem
+flange      = 0.9;    // flange overhang around the stem
 flange_t    = 0.9;
 btn_travel  = 0.5;    // free play the pocket allows outward
 btn_proud   = 1.0;    // stem sticking out past the case surface
-power_stem  = [9.0, 5.0];   // x, z
+power_stem  = [11.0, 6.0];   // x, z
 power_nub   = [5.0, 4.2];   // x, z; reaches into the recessed ring
 power_nub_l = 1.0;          // VERIFY: depth of the recess around the power key
 
@@ -112,7 +113,7 @@ module rbox(size, r, h) {
 }
 
 module outline() {
-    f = 1.5;
+    f = lug_fillet;
     offset(r = -f) offset(r = f) union() {
         rrect(out_min, out_max, dev_r + wall);
         for (p = screw_pos) translate(p) circle(r = lug_r);
@@ -231,7 +232,7 @@ if (part == "assembly") {
     translate([0, 0, out_max.z]) rotate([180, 0, 0]) front_shell();
 } else if (part == "buttons") {
     // side caps print flange down; the power cap prints stem down so its nub
-    // ends up on top (the 1.2 mm flange ledge prints without support)
+    // ends up on top (the 0.9 mm flange ledge prints without support)
     translate([0, 0, wall + btn_proud])
         rotate([180, 0, 0]) power_cap();
     for (i = [0 : len(side_keys) - 1])
