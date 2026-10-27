@@ -38,20 +38,29 @@ power_z = ((dev.z - 5.1) + 5.2) / 2;    // 7.55
 jack_x = ((dev.x - 39.5) + 8.2) / 2;    // 11.0
 jack_z = ((dev.z - 2.7) + 6.7) / 2;     // 9.5
 
-// Micro USB, bottom edge. VERIFY position.
+// Micro USB, bottom edge. From the dimensioned drawing: centered, 7.3 x 2.5 port.
 usb_x = dev.x / 2;
 usb_z = dev.z / 2;
 
-// Side keys on the right edge, one guide each: [y center, width]. VERIFY.
-// At 9 mm spacing the guides sit 9 * cos(tilt) apart, which limits the width.
+// Right edge, from the dimensioned drawing (positions from the top edge, +-0.5..1 mm):
+// upper rocker 14.0..33.0, play/pause 36.2..43.8, lower rocker 47.0..69.0.
+// The two drawings disagree on which rocker is volume and which is track;
+// that does not change the case.
+function from_top(a, b) = [dev.y - b, dev.y - a];   // -> [y low, y high]
+upper_rocker = from_top(14.0, 33.0);
+play_key     = from_top(36.2, 43.8);
+lower_rocker = from_top(47.0, 69.0);
+
+// One guide per press point, [y center, width]: both ends of each rocker plus play.
+side_key_w = 7.0;
 side_keys = [
-    [62.0, 6.0],   // vol +
-    [53.0, 6.0],   // vol -
-    [37.0, 6.0],   // prev
-    [28.0, 6.0],   // play / pause
-    [19.0, 6.0],   // next
+    [upper_rocker[1] - side_key_w / 2, side_key_w],
+    [upper_rocker[0] + side_key_w / 2, side_key_w],
+    [(play_key[0] + play_key[1]) / 2,  side_key_w],
+    [lower_rocker[1] - side_key_w / 2, side_key_w],
+    [lower_rocker[0] + side_key_w / 2, side_key_w],
 ];
-side_key_z = dev.z / 2;     // VERIFY
+side_key_z = dev.z / 2;     // drawing: centered in thickness
 side_key_h = 5.0;           // cap height along z
 
 // ---------------------------------------------------------------- case
@@ -65,8 +74,10 @@ frame_off = 0.0;   // frame chords relative to the rectangle that touches the ca
 bulge     = 4.5;   // how far each edge arcs out past its chord
 corner_r  = 1.5;   // rounding of the four frame corners
 
-// Screen window: insets from the device edges [left, right, bottom, top]. VERIFY.
-window_inset = [3.0, 3.0, 3.0, 3.0];
+// Screen window: active LCD 42.67 x 56.90, 5.2 mm from the sides, 8.1 from the top,
+// 12.2 from the bottom (dimensioned drawing), opened up 1 mm all round.
+// Insets from the device edges [left, right, bottom, top].
+window_inset = [4.2, 4.2, 11.2, 7.1];
 window_r     = 2.0;
 
 jack_open_d = 8.5;          // fits slim straight and L-shaped plugs

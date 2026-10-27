@@ -33,11 +33,9 @@ The microSD slot is covered on purpose. Open the case to swap cards.
 
 ## Check before printing
 
-The body size, power key and jack positions are caliper measurements. The following are estimates. Measure them on the player and update the parameters if needed:
+The body size, power key and jack positions are caliper measurements. Side keys, micro USB and the screen window come from a dimensioned drawing reconstructed from photos (about +-0.5 to 1 mm). The right edge has two rockers and a play/pause key; each rocker end gets its own plunger, five in total. The following are still estimates. Measure them on the player and update the parameters if needed:
 
-- `side_keys`, `side_key_z`: positions of the five side keys on the right edge
-- `usb_x`, `usb_z`: micro USB position
-- `window_inset`: screen window border
+- `upper_rocker`, `play_key`, `lower_rocker`: right-edge key positions, from the drawing
 - `dev_r`: body corner radius
 - `power_nub_l`: depth of the recess around the power key
 - z direction: `z = 0` is the back face and `z = 15` is the screen face. If the jack and power measurements were taken from the screen side, swap them with `dev.z - value`.
