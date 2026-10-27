@@ -42,14 +42,17 @@ jack_z = ((dev.z - 2.7) + 6.7) / 2;     // 9.5
 usb_x = dev.x / 2;
 usb_z = dev.z / 2;
 
-// Right edge, from the dimensioned drawing (positions from the top edge, +-0.5..1 mm):
-// upper rocker 14.0..33.0, play/pause 36.2..43.8, lower rocker 47.0..69.0.
-// The two drawings disagree on which rocker is volume and which is track;
-// that does not change the case.
+// Right edge: two rockers of equal length with play/pause centered between them.
+// Play/pause and the gaps follow the dimensioned drawing (+-0.5..1 mm); the rocker
+// length is the average of the drawing's estimates. Measured from the top edge.
+play_ctr_top = 40.0;
+play_len     = 7.6;
+rocker_gap   = 3.2;    // between each rocker and play/pause
+rocker_len   = 20.0;
 function from_top(a, b) = [dev.y - b, dev.y - a];   // -> [y low, y high]
-upper_rocker = from_top(14.0, 33.0);
-play_key     = from_top(36.2, 43.8);
-lower_rocker = from_top(47.0, 69.0);
+play_key     = from_top(play_ctr_top - play_len / 2, play_ctr_top + play_len / 2);
+upper_rocker = [play_key[1] + rocker_gap, play_key[1] + rocker_gap + rocker_len];
+lower_rocker = [play_key[0] - rocker_gap - rocker_len, play_key[0] - rocker_gap];
 
 // One guide per press point, [y center, width]: both ends of each rocker plus play.
 side_key_w = 7.0;
