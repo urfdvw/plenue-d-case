@@ -28,8 +28,10 @@ power_ring  = 13.0;
 jack_x = 11.0;               // top edge
 jack_z = dev.z - 5.4;        // 5.4 mm from the screen face
 
-usb_x = dev.x / 2;           // bottom edge, VERIFY
-usb_z = dev.z / 2;
+// Micro USB, bottom edge: estimated by eye from a photo of the bottom end. Roughly
+// centered across the width, closer to the back than to the screen. VERIFY.
+usb_x = dev.x / 2;
+usb_z = 6.0;
 
 // Right edge, measured from the top edge.
 key_track = [14.3, 67.1];    // whole key group
@@ -45,26 +47,30 @@ wall  = 2.0;
 lip_h = 1.0;                 // lip height above the screen
 lip_in = 0.5;                // how far the lip leans over the screen edge
 back_r = 2.0;                // rounding of the back edges
-lip_r  = 0.8;                // rounding of the outer lip edge
+lip_blend_h  = 3.0;          // outer side curves in over this height below the lip top
+lip_blend_in = 1.2;          // ... and ends this far in, tangent to the lip top
 lip_ri = 0.6;                // rounding of the inner lip edge
 cav_r  = 1.0;                // rounding inside the back edges
 
 jack_open = 8.0;             // diameter, original hole is ~4.9
-usb_open  = [12.0, 7.5];     // x, z
+usb_open  = [12.0, 9.0];     // x, z; tall to cover the uncertain port height
 usb_open_r = 2.0;
 
-// Integrated keys on the right side: above and below the key band (screen up)
-// the wall thins to 1 mm, recessed from the outside with smooth ramps.
-thin_wall  = 1.0;
-ramp       = 1.2;            // length of each smooth transition
-thin_w     = 1.0;            // flat 1 mm stretch on each side of the key band
+// Integrated keys. Along each key band the wall folds into an S: on both sides of
+// the band (screen up: above and below) an outer groove and an inner groove,
+// offset from each other, leave a 1 mm wall that steps out and back in with
+// smooth ramps. Slits perpendicular to the screen separate the keys.
+groove_d   = 1.0;            // groove depth; wall in the fold = wall - groove_d
 slit_w     = 0.6;
-slit_z     = [2.0, 12.9];    // slit extent in z (perpendicular to the screen)
-key_nub    = 0.3;            // VERIFY: inner bump over each key
+key_nub    = 0.3;            // VERIFY: inner bump over each side key
 
-// Power key: integrated pad between two slits, with a pocket for the knob.
-power_pad_w = 15.0;          // slit to slit
-power_bump  = [10.0, 1.0];   // outer bump: diameter, height
+// [ramp, flat] of the grooves, side keys and power key
+side_groove  = [1.0, 0.7];
+power_groove = [0.7, 0.5];
+
+// Power key: same fold as the side keys, between two slits around the knob.
+power_pad_w = 14.0;          // slit to slit
+power_band  = power_knob + 0.8;
 
 // ---------------------------------------------------------------- derived
 cav0 = [-fit, -fit];
@@ -91,11 +97,12 @@ function arc(c, r, a0, a1, n = 8) = [for (i = [0 : n]) let (a = a0 + (a1 - a0) *
     [c[0] + r * cos(a), c[1] + r * sin(a)]];
 
 // Outer profile, inset measured from the cavity outline grown by `wall`:
-// quarter round on the back edge, straight side, lip leaning in with a round top.
+// quarter round on the back edge, straight side, smooth curve into the lip top.
 outer_prof = concat(
     arc([back_r, -wall + back_r], back_r, 270, 180),
-    [[0, dev.z]],
-    arc([lip_in + lip_r - 0.3, top_z - lip_r], lip_r, 180, 90)
+    // quarter ellipse: leaves the side vertically, meets the lip top horizontally
+    [for (i = [0 : 16]) let (t = 90 * i / 16)
+        [lip_blend_in * (1 - cos(t)), top_z - lip_blend_h + lip_blend_h * sin(t)]]
 );
 
 // Cavity profile, inset measured from the cavity outline (negative grows).
@@ -115,60 +122,70 @@ module cavity() {
     sweep(cav_prof) cav_plan();
 }
 
-// ---------------------------------------------------------------- right-side keys
-// 2D drawing in the (y, z) plane placed on a plane x = const, extruded +x.
-module on_yz(x, h = eps) {
-    translate([x, 0, 0]) rotate([90, 0, 90]) linear_extrude(h) children();
-}
-
+// ---------------------------------------------------------------- integrated keys
 function from_top(d) = dev.y - d;
 
-// One recessed band: flat floor `wall - thin_wall` deep over [z0, z1],
-// rising with a cosine ramp to the surface over `ramp` on every side.
-module recess_band(z0, z1) {
-    y0 = from_top(key_track[1]);
-    y1 = from_top(key_track[0]);
-    depth = wall - thin_wall;
+// Local key frame: u along the edge, v = z, w = depth inward from the outer surface.
+module key_frame(face) {
+    m = face == "right"
+        ? [[0, 0, -1, outer_x1], [1, 0, 0, 0], [0, 1, 0, 0]]
+        : [[1, 0, 0, 0], [0, 0, -1, outer_y1], [0, 1, 0, 0]];
+    multmatrix(m) children();
+}
+
+// One groove in the key frame: flat floor over [u0, u1] x [v0, v1], `groove_d`
+// deep, rising to the surface with a cosine ramp of length `r` on every side.
+// from_inner: cut from the cavity side instead of the outside.
+module groove(u0, u1, v0, v1, r, from_inner) {
     n = 8;
-    lv = [for (i = [0 : n]) let (u = i / n) [depth * (1 - cos(180 * u)) / 2, ramp * (1 - u)]];
-    module level(l, dx) on_yz(outer_x1 - l[0] + dx)
-        rrect([y0 - l[1], z0 - l[1]], [y1 + l[1], z1 + l[1]], 0.5 + l[1] / 2);
-    level(lv[0], 0);
-    hull() { level(lv[0], 0); level(lv[0], 1); }
-    for (i = [0 : n - 1]) hull() { level(lv[i], 0); level(lv[i + 1], 0); }
+    lv = [for (i = [0 : n]) let (t = i / n) [groove_d * (1 - cos(180 * t)) / 2, r * (1 - t)]];
+    function w(d) = from_inner ? wall - d : d;
+    module level(l, dw = 0) translate([0, 0, w(l[0]) + dw]) linear_extrude(eps)
+        rrect([u0 - l[1], v0 - l[1]], [u1 + l[1], v1 + l[1]], 0.3 + l[1] / 2);
+    hull() { level(lv[0]); level(lv[0], from_inner ? 1 : -1); }
+    for (i = [0 : n - 1]) hull() { level(lv[i]); level(lv[i + 1]); }
+}
+
+// S fold on both sides of a key band [vc - h, vc + h], along [u0, u1].
+// Going away from the band: outer groove, then the inner groove, whose
+// ramp down shares the outer groove's ramp up, so the 1 mm wall stays even.
+module s_fold(u0, u1, vc, h, g) {
+    r = g[0]; f = g[1];
+    for (s = [-1, 1]) {
+        o = [vc + s * (h + r), vc + s * (h + r + f)];
+        i = [vc + s * (h + 2 * r + f), vc + s * (h + 2 * r + 2 * f)];
+        groove(u0, u1, min(o), max(o), r, false);
+        groove(u0, u1, min(i), max(i), r, true);
+    }
+}
+
+function fold_half(h, g) = h + 3 * g[0] + 2 * g[1];
+
+module slit(face, u, v0, v1) {
+    key_frame(face) translate([u - slit_w / 2, v0, -1]) cube([slit_w, v1 - v0, wall + 2]);
 }
 
 module key_cuts() {
-    half = key_h / 2;
-    recess_band(key_z - half - ramp - thin_w, key_z - half - ramp);
-    recess_band(key_z + half + ramp, key_z + half + ramp + thin_w);
-    for (d = key_split)
-        translate([cav1.x - 1, from_top(d) - slit_w / 2, slit_z[0]])
-            cube([wall + 3, slit_w, slit_z[1] - slit_z[0]]);
+    // right side
+    u0 = from_top(key_track[1]);
+    u1 = from_top(key_track[0]);
+    key_frame("right") s_fold(u0, u1, key_z, key_h / 2, side_groove);
+    hs = fold_half(key_h / 2, side_groove);
+    for (d = key_split) slit("right", from_top(d), key_z - hs - 0.2, key_z + hs + 0.2);
+    // power key on the top edge
+    p0 = power_x - power_pad_w / 2;
+    p1 = power_x + power_pad_w / 2;
+    key_frame("top") s_fold(p0, p1, power_z, power_band / 2, power_groove);
+    hp = fold_half(power_band / 2, power_groove);
+    for (u = [p0, p1]) slit("top", u, power_z - hp - 0.2, power_z + hp + 0.2);
+    // room for the power knob
+    translate([power_x, cav1.y - eps, power_z]) rotate([-90, 0, 0])
+        cylinder(d = power_knob + 0.8, h = power_proud + 0.1);
 }
 
 module key_nubs() {
     if (key_nub > 0) for (d = key_ctr)
         translate([cav1.x, from_top(d), key_z]) resize([2 * key_nub, 3.0, 2.0]) sphere(1);
-}
-
-// ---------------------------------------------------------------- power key
-module power_cuts() {
-    // knob pocket
-    translate([power_x, cav1.y - eps, power_z]) rotate([-90, 0, 0])
-        cylinder(d = power_knob + 0.8, h = power_proud + 0.1);
-    for (s = [-1, 1])
-        translate([power_x + s * power_pad_w / 2 - slit_w / 2, cav1.y - 1, slit_z[0]])
-            cube([slit_w, wall + power_bump[1] + 3, slit_z[1] - slit_z[0]]);
-}
-
-module power_bump() {
-    r = power_bump[0] / 2; h = power_bump[1];
-    translate([power_x, outer_y1 - eps, power_z]) rotate([-90, 0, 0]) hull() {
-        cylinder(r = r, h = eps);
-        rotate_extrude() translate([r - h, 0]) circle(r = h - eps);
-        cylinder(r = r - h, h = h);
-    }
 }
 
 // ---------------------------------------------------------------- openings
@@ -182,10 +199,9 @@ module openings() {
 // ---------------------------------------------------------------- case
 module case() {
     difference() {
-        union() { outer(); power_bump(); }
+        outer();
         cavity();
         key_cuts();
-        power_cuts();
         openings();
     }
     key_nubs();
