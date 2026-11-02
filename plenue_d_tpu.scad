@@ -64,10 +64,12 @@ key_nub    = 0.3;            // VERIFY: inner bump over each side key
 // [ramp, flat] of the grooves
 side_groove  = [1.0, 0.7];
 
-// Power key: same band and fold as the side keys, between two slits. The whole
-// pad is raised outward to clear the knob, which stands 1.2 mm proud.
+// Power key: same band and fold as the side keys, between two slits. Seen from
+// the front, the case outline steps up over the power block (from the block
+// seam to the right edge) to clear the knob, which stands 1.2 mm proud.
 power_pad_w = 14.0;          // slit to slit
 power_raise = 1.3;           // knob height + 0.1
+raise_x0    = 35.2;          // power block seam, from the three-view
 
 // Front cover over the metal top cap (3.4 mm band at the top of the front face).
 cap_len = 3.4;
@@ -77,20 +79,34 @@ cav0 = [-fit, -fit];
 cav1 = [dev.x + fit, dev.y + fit];
 top_z = dev.z + lip_h;
 outer_x1 = cav1.x + wall;
-outer_y1 = cav1.y + wall;
+outer_y1 = cav1.y + wall + power_raise;   // top wall over the power block
 
 module rrect(p0, p1, r) {
     hull() for (x = [p0.x + r, p1.x - r], y = [p0.y + r, p1.y - r])
         translate([x, y]) circle(r = r);
 }
 
-module cav_plan()   { rrect(cav0, cav1, dev_r + fit); }
+// Plan outline of the cavity, stepped up over the power block, inner corner rounded.
+module cav_plan() {
+    offset(r = -1) offset(r = 1) union() {
+        rrect(cav0, cav1, dev_r + fit);
+        rrect([raise_x0 - fit, cav0.y], [cav1.x, cav1.y + power_raise], dev_r + fit);
+    }
+}
 
-// Stack of thin slabs following a profile [[inset, z], ...]; each pair of
-// neighbouring slabs is hulled, so the profile may be non-convex.
+module outer_plan() { offset(r = -wall) offset(r = wall) offset(r = wall) cav_plan(); }
+
+// Follows a profile [[inset, z], ...] with a stack of offset slabs no taller than
+// sweep_dz, so the plan outline may be non-convex (the power step).
+sweep_dz = 0.1;
 module sweep(profile) {
-    for (i = [0 : len(profile) - 2]) hull() for (p = [profile[i], profile[i + 1]])
-        translate([0, 0, p[1]]) linear_extrude(eps) offset(r = -p[0]) children();
+    for (i = [0 : len(profile) - 2]) let (a = profile[i], b = profile[i + 1],
+            n = a[0] == b[0] ? 1 : max(1, ceil(abs(b[1] - a[1]) / sweep_dz)))
+        for (j = [0 : n - 1]) let (z0 = a[1] + (b[1] - a[1]) * j / n,
+                                   z1 = a[1] + (b[1] - a[1]) * (j + 1) / n,
+                                   ins = a[0] + (b[0] - a[0]) * (j + 0.5) / n)
+            if (z1 > z0) translate([0, 0, z0 - eps]) linear_extrude(z1 - z0 + 2 * eps)
+                offset(r = -ins) children();
 }
 
 function arc(c, r, a0, a1, n = 8) = [for (i = [0 : n]) let (a = a0 + (a1 - a0) * i / n)
@@ -120,7 +136,7 @@ lip_prof = concat(
 );
 
 module outer() {
-    sweep(outer_prof) offset(r = wall) cav_plan();
+    sweep(outer_prof) outer_plan();
 }
 
 module front_plan() { rrect(cav0, [cav1.x, dev.y - cap_len], dev_r + fit); }
@@ -175,28 +191,12 @@ module s_fold(u0, u1, vc, h, g) {
 
 function fold_half(h, g) = h + 3 * g[0] + 2 * g[1];
 
-module slit(face, u, v0, v1, extra = 0) {
-    key_frame(face) translate([u - slit_w / 2, v0, -1 - extra]) cube([slit_w, v1 - v0, wall + 2 + extra]);
+module slit(face, u, v0, v1) {
+    key_frame(face) translate([u - slit_w / 2, v0, -1]) cube([slit_w, v1 - v0, wall + 2]);
 }
-
-// The raised pad ends where the outer groove floor starts; its ramp back to the
-// normal wall then replaces the outer groove's own ramp, so no ridge forms.
-function raise_half() = key_h / 2 + 2 * side_groove[0] + side_groove[1];
-raise_ramp = side_groove[0];
 
 function power_box(hs) = [power_x - power_pad_w / 2, power_x + power_pad_w / 2,
                           power_z - hs, power_z + hs];
-
-// Raised power pad: the wall between the slits moves outward by power_raise.
-module power_raise_add(hs) {
-    b = power_box(hs);
-    key_frame("top") plateau(b[0], b[1], b[2], b[3], raise_ramp, power_raise, 0, -1, 0.5);
-}
-
-module power_raise_cut(hs) {
-    b = power_box(hs);
-    key_frame("top") plateau(b[0], b[1], b[2], b[3], raise_ramp, power_raise, wall, -1, 1);
-}
 
 module key_cuts() {
     // right side
@@ -205,12 +205,10 @@ module key_cuts() {
     key_frame("right") s_fold(u0, u1, key_z, key_h / 2, side_groove);
     hs = fold_half(key_h / 2, side_groove);
     for (d = key_split) slit("right", from_top(d), key_z - hs - 0.2, key_z + hs + 0.2);
-    // power key on the top edge: a side key on the raised pad
+    // power key on the stepped-up top wall, same as a side key
     b = power_box(hs);
-    power_raise_cut(raise_half());
-    key_frame("top") translate([0, 0, -power_raise])
-        s_fold(b[0], b[1], power_z, key_h / 2, side_groove);
-    for (u = [b[0], b[1]]) slit("top", u, b[2] - 0.2, b[3] + 0.2, power_raise);
+    key_frame("top") s_fold(b[0], b[1], power_z, key_h / 2, side_groove);
+    for (u = [b[0], b[1]]) slit("top", u, b[2] - 0.2, b[3] + 0.2);
 }
 
 module key_nubs() {
@@ -229,7 +227,7 @@ module openings() {
 // ---------------------------------------------------------------- case
 module case() {
     difference() {
-        union() { outer(); power_raise_add(raise_half()); }
+        outer();
         cavity();
         key_cuts();
         openings();
