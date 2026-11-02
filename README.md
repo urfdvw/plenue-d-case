@@ -1,41 +1,24 @@
-# Plenue D case
+# Plenue D TPU case
 
-OpenSCAD case for the Cowon Plenue D (53.3 x 77.3 x 15.0 mm), printable in PLA on an FDM printer.
+One-piece soft case for the Cowon Plenue D (53.1 x 77.2 x 14.9 mm), printed in TPU.
 
-The outer frame is rotated 10 degrees against the player, in the style of early Astell&Kern players, and its four edges arc outward. Each corner of the player sits close to one frame edge. The four M2 screws sit in the gaps between the player and the frame corners. The headphone and USB openings run straight along the player's axes. The button plungers slide in guides perpendicular to the frame.
+- `plenue_d_tpu.scad`: parametric model
+- `stl/plenue_d_tpu.stl`: exported case
+- `plenue_d_three_view.png`: player dimensions reverse-engineered from photos, used for the model
 
-- `plenue_d_case.scad`: parametric model. Set `part` to `back`, `front`, `buttons` or `assembly`.
-- `stl/`: exported parts (`back.stl`, `front.stl`, `buttons.stl`).
+## Design
 
-## Parts and printing
+- 2 mm wall on every face except the screen.
+- Front lip stands 1 mm above the glass and leans 0.5 mm inward to hold the player.
+- Keys are part of the case. On the right side, the wall thins to 1 mm above and below the key band, recessed from the outside with smooth ramps. Slits perpendicular to the screen split the band into five keys: vol +, vol -, play, next, prev. A small bump inside presses each key.
+- The power key is a pad between two slits, with a pocket for the knob and a raised dome outside.
+- Headphone and USB openings are larger than the ports. The microSD slot is covered.
+- Every edge is rounded, except the openings and slits.
 
-- Back shell: print back face down, no supports.
-- Front shell: print screen face down, no supports.
-- Buttons: one power plunger and five side plungers. They print lying flat, no supports.
-- 0.2 mm layers, 3 perimeters, 20 % infill.
+## Printing
 
-## Assembly
-
-1. Drop the plungers, flange inward, into the guides of the back shell.
-2. Put the player in, screen up, top edge (jack + power key) toward the jack opening.
-3. Put the front shell on top.
-4. Drive 4x M2 x 12 screws from the back. They self-tap into the front shell (1.7 mm pilot).
-
-The microSD slot is covered on purpose. Open the case to swap cards.
-
-## Main shape parameters
-
-- `tilt`: frame rotation
-- `bulge`: how far each edge arcs out
-- `frame_off`: grows or shrinks the frame
-- `corner_r`: corner rounding
-- `screw_inset`, `screw_tr`, `screw_bl`: screw positions. The top-right and bottom-left screws are placed by hand and need retuning when `tilt` changes.
+Print back face down. No supports needed. Use 0.2 mm layers and a slow speed suitable for TPU.
 
 ## Check before printing
 
-The body size, power key and jack positions are caliper measurements. Side keys, micro USB and the screen window come from a dimensioned drawing reconstructed from photos (about +-0.5 to 1 mm). The right edge has two rockers and a play/pause key; each rocker end gets its own plunger, five in total. The following are still estimates. Measure them on the player and update the parameters if needed:
-
-- `play_ctr_top`, `play_len`, `rocker_gap`, `rocker_len`: right-edge key layout (two equal rockers around play/pause), from the drawing
-- `dev_r`: body corner radius
-- `power_nub_l`: depth of the recess around the power key
-- z direction: `z = 0` is the back face and `z = 15` is the screen face. If the jack and power measurements were taken from the screen side, swap them with `dev.z - value`.
+Positions come from photos (about +-0.5 to 1 mm). The USB port was not visible in the photos; it is assumed centered on the bottom edge (`usb_x`, `usb_z`). If the keys feel pressed all the time, reduce `key_nub`.
