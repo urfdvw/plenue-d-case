@@ -66,11 +66,11 @@ key_nub    = 0.3;            // VERIFY: inner bump over each side key
 
 // [ramp, flat] of the grooves, side keys and power key
 side_groove  = [1.0, 0.7];
-power_groove = [0.7, 0.5];
+power_groove = [0.6, 0.4];
 
 // Power key: same fold as the side keys, between two slits around the knob.
 power_pad_w = 14.0;          // slit to slit
-power_band  = power_knob + 0.8;
+power_band  = power_knob + 0.8 + 1.0;   // 0.5 mm of full wall around the knob pocket
 
 // ---------------------------------------------------------------- derived
 cav0 = [-fit, -fit];
@@ -147,13 +147,13 @@ module groove(u0, u1, v0, v1, r, from_inner) {
 }
 
 // S fold on both sides of a key band [vc - h, vc + h], along [u0, u1].
-// Going away from the band: outer groove, then the inner groove, whose
-// ramp down shares the outer groove's ramp up, so the 1 mm wall stays even.
+// Going away from the band: inner groove, then the outer groove, whose
+// ramp down shares the inner groove's ramp up, so the 1 mm wall stays even.
 module s_fold(u0, u1, vc, h, g) {
     r = g[0]; f = g[1];
     for (s = [-1, 1]) {
-        o = [vc + s * (h + r), vc + s * (h + r + f)];
-        i = [vc + s * (h + 2 * r + f), vc + s * (h + 2 * r + 2 * f)];
+        i = [vc + s * (h + r), vc + s * (h + r + f)];
+        o = [vc + s * (h + 2 * r + f), vc + s * (h + 2 * r + 2 * f)];
         groove(u0, u1, min(o), max(o), r, false);
         groove(u0, u1, min(i), max(i), r, true);
     }
