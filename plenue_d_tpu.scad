@@ -64,8 +64,13 @@ key_nub    = 0.3;            // VERIFY: inner bump over each side key
 // [ramp, flat] of the grooves
 side_groove  = [1.0, 0.7];
 
-// Power key: same band and fold as the side keys, between two slits.
+// Power key: same band and fold as the side keys, between two slits. The whole
+// pad is raised outward to clear the knob, which stands 1.2 mm proud.
 power_pad_w = 14.0;          // slit to slit
+power_raise = 1.3;           // knob height + 0.1
+
+// Front cover over the metal top cap (3.4 mm band at the top of the front face).
+cap_len = 3.4;
 
 // ---------------------------------------------------------------- derived
 cav0 = [-fit, -fit];
@@ -101,9 +106,14 @@ outer_prof = concat(
 );
 
 // Cavity profile, inset measured from the cavity outline (negative grows).
+// Below the glass it follows the player; above, the opening (front_plan) leaves
+// the metal top cap covered.
 cav_prof = concat(
     arc([cav_r, cav_r], cav_r, 270, 180),
-    [[0, dev.z + fit]],
+    [[0, dev.z + fit]]
+);
+lip_prof = concat(
+    [[0, dev.z + fit - eps]],
     [[lip_in, top_z - lip_ri]],
     arc([lip_in - lip_ri, top_z - lip_ri], lip_ri, 0, 90),
     [[lip_in - lip_ri - 1.5, top_z + 1]]
@@ -113,8 +123,11 @@ module outer() {
     sweep(outer_prof) offset(r = wall) cav_plan();
 }
 
+module front_plan() { rrect(cav0, [cav1.x, dev.y - cap_len], dev_r + fit); }
+
 module cavity() {
     sweep(cav_prof) cav_plan();
+    sweep(lip_prof) front_plan();
 }
 
 // ---------------------------------------------------------------- integrated keys
@@ -128,17 +141,23 @@ module key_frame(face) {
     multmatrix(m) children();
 }
 
-// One groove in the key frame: flat floor over [u0, u1] x [v0, v1], `groove_d`
-// deep, rising to the surface with a cosine ramp of length `r` on every side.
-// from_inner: cut from the cavity side instead of the outside.
-module groove(u0, u1, v0, v1, r, from_inner) {
+// Smooth plateau in the key frame: flat over [u0, u1] x [v0, v1] at `depth`
+// from the surface w = w0 (dir = +1 goes inward, -1 outward), blending back to
+// the surface with a cosine ramp of length `r` on every side. `back` extends
+// the solid past the surface so it unions/cuts cleanly.
+module plateau(u0, u1, v0, v1, r, depth, w0, dir, back) {
     n = 8;
-    lv = [for (i = [0 : n]) let (t = i / n) [groove_d * (1 - cos(180 * t)) / 2, r * (1 - t)]];
-    function w(d) = from_inner ? wall - d : d;
-    module level(l, dw = 0) translate([0, 0, w(l[0]) + dw]) linear_extrude(eps)
+    lv = [for (i = [0 : n]) let (t = i / n) [depth * (1 - cos(180 * t)) / 2, r * (1 - t)]];
+    module level(l, dw = 0) translate([0, 0, w0 + dir * l[0] + dw]) linear_extrude(eps)
         rrect([u0 - l[1], v0 - l[1]], [u1 + l[1], v1 + l[1]], 0.3 + l[1] / 2);
-    hull() { level(lv[0]); level(lv[0], from_inner ? 1 : -1); }
+    hull() { level(lv[0]); level(lv[0], back); }
     for (i = [0 : n - 1]) hull() { level(lv[i]); level(lv[i + 1]); }
+}
+
+// One groove, `groove_d` deep, cut from the outside or from the cavity side.
+module groove(u0, u1, v0, v1, r, from_inner) {
+    if (from_inner) plateau(u0, u1, v0, v1, r, groove_d, wall, -1, 1);
+    else            plateau(u0, u1, v0, v1, r, groove_d, 0, 1, -1);
 }
 
 // S fold on both sides of a key band [vc - h, vc + h], along [u0, u1].
@@ -156,8 +175,27 @@ module s_fold(u0, u1, vc, h, g) {
 
 function fold_half(h, g) = h + 3 * g[0] + 2 * g[1];
 
-module slit(face, u, v0, v1) {
-    key_frame(face) translate([u - slit_w / 2, v0, -1]) cube([slit_w, v1 - v0, wall + 2]);
+module slit(face, u, v0, v1, extra = 0) {
+    key_frame(face) translate([u - slit_w / 2, v0, -1 - extra]) cube([slit_w, v1 - v0, wall + 2 + extra]);
+}
+
+// The raised pad ends where the outer groove floor starts; its ramp back to the
+// normal wall then replaces the outer groove's own ramp, so no ridge forms.
+function raise_half() = key_h / 2 + 2 * side_groove[0] + side_groove[1];
+raise_ramp = side_groove[0];
+
+function power_box(hs) = [power_x - power_pad_w / 2, power_x + power_pad_w / 2,
+                          power_z - hs, power_z + hs];
+
+// Raised power pad: the wall between the slits moves outward by power_raise.
+module power_raise_add(hs) {
+    b = power_box(hs);
+    key_frame("top") plateau(b[0], b[1], b[2], b[3], raise_ramp, power_raise, 0, -1, 0.5);
+}
+
+module power_raise_cut(hs) {
+    b = power_box(hs);
+    key_frame("top") plateau(b[0], b[1], b[2], b[3], raise_ramp, power_raise, wall, -1, 1);
 }
 
 module key_cuts() {
@@ -167,11 +205,12 @@ module key_cuts() {
     key_frame("right") s_fold(u0, u1, key_z, key_h / 2, side_groove);
     hs = fold_half(key_h / 2, side_groove);
     for (d = key_split) slit("right", from_top(d), key_z - hs - 0.2, key_z + hs + 0.2);
-    // power key on the top edge, same as a side key
-    p0 = power_x - power_pad_w / 2;
-    p1 = power_x + power_pad_w / 2;
-    key_frame("top") s_fold(p0, p1, power_z, key_h / 2, side_groove);
-    for (u = [p0, p1]) slit("top", u, power_z - hs - 0.2, power_z + hs + 0.2);
+    // power key on the top edge: a side key on the raised pad
+    b = power_box(hs);
+    power_raise_cut(raise_half());
+    key_frame("top") translate([0, 0, -power_raise])
+        s_fold(b[0], b[1], power_z, key_h / 2, side_groove);
+    for (u = [b[0], b[1]]) slit("top", u, b[2] - 0.2, b[3] + 0.2, power_raise);
 }
 
 module key_nubs() {
@@ -190,7 +229,7 @@ module openings() {
 // ---------------------------------------------------------------- case
 module case() {
     difference() {
-        outer();
+        union() { outer(); power_raise_add(raise_half()); }
         cavity();
         key_cuts();
         openings();
