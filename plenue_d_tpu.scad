@@ -21,9 +21,6 @@ dev_r = 1.0;                 // plan-view corner radius
 
 power_x     = 44.5;          // top edge
 power_z     = dev.z / 2;
-power_knob  = 6.0;           // knob diameter
-power_proud = 1.2;           // knob height above the top face
-power_ring  = 13.0;
 
 jack_x = 11.0;               // top edge
 jack_z = dev.z - 5.4;        // 5.4 mm from the screen face
@@ -64,13 +61,11 @@ groove_d   = 1.0;            // groove depth; wall in the fold = wall - groove_d
 slit_w     = 0.6;
 key_nub    = 0.3;            // VERIFY: inner bump over each side key
 
-// [ramp, flat] of the grooves, side keys and power key
+// [ramp, flat] of the grooves
 side_groove  = [1.0, 0.7];
-power_groove = [0.6, 0.4];
 
-// Power key: same fold as the side keys, between two slits around the knob.
+// Power key: same band and fold as the side keys, between two slits.
 power_pad_w = 14.0;          // slit to slit
-power_band  = power_knob + 0.8 + 1.0;   // 0.5 mm of full wall around the knob pocket
 
 // ---------------------------------------------------------------- derived
 cav0 = [-fit, -fit];
@@ -172,15 +167,11 @@ module key_cuts() {
     key_frame("right") s_fold(u0, u1, key_z, key_h / 2, side_groove);
     hs = fold_half(key_h / 2, side_groove);
     for (d = key_split) slit("right", from_top(d), key_z - hs - 0.2, key_z + hs + 0.2);
-    // power key on the top edge
+    // power key on the top edge, same as a side key
     p0 = power_x - power_pad_w / 2;
     p1 = power_x + power_pad_w / 2;
-    key_frame("top") s_fold(p0, p1, power_z, power_band / 2, power_groove);
-    hp = fold_half(power_band / 2, power_groove);
-    for (u = [p0, p1]) slit("top", u, power_z - hp - 0.2, power_z + hp + 0.2);
-    // room for the power knob
-    translate([power_x, cav1.y - eps, power_z]) rotate([-90, 0, 0])
-        cylinder(d = power_knob + 0.8, h = power_proud + 0.1);
+    key_frame("top") s_fold(p0, p1, power_z, key_h / 2, side_groove);
+    for (u = [p0, p1]) slit("top", u, power_z - hs - 0.2, power_z + hs + 0.2);
 }
 
 module key_nubs() {
