@@ -1,6 +1,6 @@
 // Cowon Plenue D soft case, one piece, printed in TPU.
-// Wraps every face except the screen. The front lip leans over the glass at 45
-// degrees and is rounded on top; triangular guards cover the four corners. Keys
+// Wraps every face except the screen. The front lip reaches over the glass edge
+// with a 45 degree underside, a short vertical land and a flat top. Keys
 // are part of the case, separated by slits. Openings have flat tops so they
 // print as bridges, without support.
 //
@@ -50,12 +50,12 @@ key_h     = 3.2;
 // ---------------------------------------------------------------- case
 fit   = 0.1;                 // per side; TPU stretches over the player
 wall  = 2.0;
-// Lip cross-section: the inner face leaves the glass at 45 degrees and reaches
-// lip_r over the screen edge at lip_r above the glass; the top is a half round of
-// radius lip_r centered on the cavity wall, so the lip stands 2 * lip_r tall
-// and 2 * lip_r wide (wall + overhang).
-lip_r  = 2.0;
-guard_leg = 5.0;             // corner guards: right triangles, legs along the opening
+// Lip cross-section: from the cavity wall at the glass, a 45 degree underside
+// reaches lip_over over the screen edge, a vertical land of lip_land rises to
+// the flat top, and the outer top edge is rounded with lip_round.
+lip_over  = 1.0;
+lip_land  = 0.5;
+lip_round = 1.5;
 back_r = 2.0;                // rounding of the back edges
 cav_r  = 1.0;                // rounding inside the back edges
 
@@ -89,6 +89,7 @@ raise_x0    = 35.2 * sx;     // power block seam, from the three-view
 cav0 = [-fit, -fit];
 cav1 = [dev.x + fit, dev.y + fit];
 glass_z = dev.z + fit;       // underside of the lip
+lip_top = glass_z + lip_over + lip_land;
 outer_x1 = cav1.x + wall;
 outer_y1 = cav1.y + wall + power_raise;   // top wall over the power block
 
@@ -124,10 +125,10 @@ function arc(c, r, a0, a1, n = 8) = [for (i = [0 : n]) let (a = a0 + (a1 - a0) *
     [c[0] + r * cos(a), c[1] + r * sin(a)]];
 
 // Outer profile, inset measured from the cavity outline grown by `wall`:
-// quarter round on the back edge, straight side, outer half of the lip round.
+// quarter round on the back edge, straight side, rounded edge into the lip top.
 outer_prof = concat(
     arc([back_r, -wall + back_r], back_r, 270, 180),
-    arc([wall, glass_z + lip_r], lip_r, 180, 90)
+    arc([lip_round, lip_top - lip_round], lip_round, 180, 90)
 );
 
 // Cavity profile below the glass, inset measured from the cavity outline.
@@ -136,28 +137,14 @@ cav_prof = concat(
     [[0, glass_z]]
 );
 
-// Lip opening, inset measured from lip_plan: 45 degree underside, then the
-// inner half of the lip round, then clear above.
-lip_prof = concat(
-    [[0, glass_z - eps]],
-    arc([0, glass_z + lip_r], lip_r, 0, 90),
-    [[-1, glass_z + 2 * lip_r + 1]]
-);
-
-// Leg on lip_plan that gives guard_leg on the opening edge after the 45 degree
-// underside moves it lip_r inward.
-plan_leg = guard_leg + lip_r * (2 - sqrt(2));
-
-// Cavity outline with the four corners cut off for the guards, corners rounded.
-module lip_plan() {
-    corners = [[[cav0.x, cav0.y], [1, 1]], [[cav1.x, cav0.y], [-1, 1]],
-               [[cav0.x, cav1.y], [1, -1]], [[cav1.x, cav1.y + power_raise], [-1, -1]]];
-    offset(r = 1) offset(r = -1) difference() {
-        cav_plan();
-        for (c = corners) let (p = c[0], d = c[1])
-            polygon([p - 2 * d, p + [d.x * (plan_leg + 2), -2 * d.y], p + [-2 * d.x, d.y * (plan_leg + 2)]]);
-    }
-}
+// Lip opening, inset measured from the cavity outline: 45 degree underside,
+// vertical land, then clear above the flat top.
+lip_prof = [
+    [0, glass_z - eps],
+    [lip_over, glass_z + lip_over],
+    [lip_over, lip_top],
+    [-wall - 1, lip_top + 1]
+];
 
 module outer() {
     sweep(outer_prof) outer_plan();
@@ -165,7 +152,7 @@ module outer() {
 
 module cavity() {
     sweep(cav_prof) cav_plan();
-    sweep(lip_prof) lip_plan();
+    sweep(lip_prof) cav_plan();
 }
 
 // ---------------------------------------------------------------- integrated keys
