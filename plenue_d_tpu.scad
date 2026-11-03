@@ -5,24 +5,31 @@
 //   openscad -o plenue_d_tpu.stl plenue_d_tpu.scad
 //
 // Device coordinate system:
-//   x: width,     0 = left edge,   53.1 = right edge (keys)   seen from the screen side
-//   y: length,    0 = bottom edge, 77.2 = top edge (jack + power)
+//   x: width,     0 = left edge,   53.3 = right edge (keys)   seen from the screen side
+//   y: length,    0 = bottom edge, 77.0 = top edge (jack + power)
 //   z: thickness, 0 = back face,   14.9 = screen face
 //
-// All device features come from the three-view reverse-engineered from photos
-// (about +-0.5..1 mm). USB position was not visible in the photos: VERIFY.
+// Body size and key / knob protrusion are caliper measurements. Feature positions
+// come from the three-view reverse-engineered from photos (about +-0.5..1 mm),
+// scaled from its 53.1 x 77.2 body to the measured one.
 
 $fn = 64;
 eps = 0.01;
 
 // ---------------------------------------------------------------- device
-dev   = [53.1, 77.2, 14.9];
+dev   = [53.3, 77.0, 14.9];  // MEASURED width and length; thickness from the spec
 dev_r = 1.0;                 // plan-view corner radius
+knob_proud = 0.5;            // MEASURED: 77.5 with the power knob
+key_proud  = 0.4;            // MEASURED: 53.7 across the side keys
 
-power_x     = 44.5;          // top edge
+// Positions read off the three-view are scaled by these to the measured body.
+sx = dev.x / 53.1;
+sy = dev.y / 77.2;
+
+power_x     = 44.5 * sx;     // top edge
 power_z     = dev.z / 2;
 
-jack_x = 11.0;               // top edge
+jack_x = 11.0 * sx;          // top edge
 jack_z = dev.z - 5.4;        // 5.4 mm from the screen face
 
 // Micro USB, bottom edge: estimated by eye from a photo of the bottom end. Roughly
@@ -31,10 +38,10 @@ usb_x = dev.x / 2;
 usb_z = 6.0;
 
 // Right edge, measured from the top edge.
-key_track = [14.3, 67.1];    // whole key group
-key_split = [13.8, 24.2, 35.25, 46.7, 57.4, 67.6];   // slit positions, from the top
+key_track = [14.3, 67.1] * sy;    // whole key group
+key_split = [13.8, 24.2, 35.25, 46.7, 57.4, 67.6] * sy;   // slit positions, from the top
 // press points: vol +, vol -, play, next, prev (rocker halves and play)
-key_ctr   = [19.25, 29.2, 41.05, 52.55, 62.25];
+key_ctr   = [19.25, 29.2, 41.05, 52.55, 62.25] * sy;
 key_z     = dev.z / 2;
 key_h     = 3.2;
 
@@ -59,20 +66,22 @@ usb_open_r = 2.0;
 // smooth ramps. Slits perpendicular to the screen separate the keys.
 groove_d   = 1.0;            // groove depth; wall in the fold = wall - groove_d
 slit_w     = 0.6;
-key_nub    = 0.3;            // VERIFY: inner bump over each side key
+key_nub    = 0;              // inner bump over each side key (off: keys stand proud)
+// Shallow pocket inside the key band so the proud keys are not pressed at rest.
+key_relief = key_proud - fit;
 
 // [ramp, flat] of the grooves
 side_groove  = [1.0, 0.7];
 
 // Power key: same band and fold as the side keys, between two slits. Seen from
 // the front, the case outline steps up over the power block (from the block
-// seam to the right edge) to clear the knob, which stands 1.2 mm proud.
+// seam to the right edge) to clear the knob.
 power_pad_w = 14.0;          // slit to slit
-power_raise = 1.3;           // knob height + 0.1
-raise_x0    = 35.2;          // power block seam, from the three-view
+power_raise = knob_proud + 0.1;
+raise_x0    = 35.2 * sx;     // power block seam, from the three-view
 
 // Front cover over the metal top cap (3.4 mm band at the top of the front face).
-cap_len = 3.4;
+cap_len = 3.4 * sy;
 
 // ---------------------------------------------------------------- derived
 cav0 = [-fit, -fit];
@@ -203,6 +212,9 @@ module key_cuts() {
     u0 = from_top(key_track[1]);
     u1 = from_top(key_track[0]);
     key_frame("right") s_fold(u0, u1, key_z, key_h / 2, side_groove);
+    if (key_relief > 0) key_frame("right")
+        plateau(u0, u1, key_z - key_h / 2, key_z + key_h / 2, side_groove[0],
+                key_relief, wall, -1, 1);
     hs = fold_half(key_h / 2, side_groove);
     for (d = key_split) slit("right", from_top(d), key_z - hs - 0.2, key_z + hs + 0.2);
     // power key on the stepped-up top wall, same as a side key
