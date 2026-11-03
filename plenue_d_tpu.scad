@@ -32,10 +32,10 @@ power_z     = dev.z / 2;
 jack_x = 11.0 * sx;          // top edge
 jack_z = dev.z - 5.4;        // 5.4 mm from the screen face
 
-// Micro USB, bottom edge: estimated by eye from a photo of the bottom end. Roughly
-// centered across the width, closer to the back than to the screen. VERIFY.
+// Micro USB, bottom edge: centered across the width (photo), center 5 mm from
+// the screen face (MEASURED).
 usb_x = dev.x / 2;
-usb_z = 6.0;
+usb_z = dev.z - 5.0;
 
 // Right edge, measured from the top edge.
 key_track = [14.3, 67.1] * sy;    // whole key group
@@ -57,7 +57,7 @@ lip_ri = 0.6;                // rounding of the inner lip edge
 cav_r  = 1.0;                // rounding inside the back edges
 
 jack_open = 8.0;             // diameter, original hole is ~4.9
-usb_open  = [12.0, 9.0];     // x, z; tall to cover the uncertain port height
+usb_open  = [12.0, 7.5];     // x, z; room for the plug overmold
 usb_open_r = 2.0;
 
 // Integrated keys. Along each key band the wall folds into an S: on both sides of

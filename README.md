@@ -21,4 +21,4 @@ Print back face down. No supports needed. Use 0.2 mm layers and a slow speed sui
 
 ## Check before printing
 
-Body size and key / knob protrusion are caliper measurements. Feature positions come from photos (about +-0.5 to 1 mm), scaled to the measured body. The USB position was estimated by eye from a photo of the bottom end: centered across the width, about 6 mm from the back (`usb_x`, `usb_z`). The opening is made tall to cover the uncertainty. If the keys feel loose, set `key_nub` to add a small bump inside each key.
+Body size and key / knob protrusion are caliper measurements. Feature positions come from photos (about +-0.5 to 1 mm), scaled to the measured body. The USB port is centered across the width (from a photo) with its center 5 mm from the screen face (measured). If the keys feel loose, set `key_nub` to add a small bump inside each key.
