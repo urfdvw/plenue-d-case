@@ -9,10 +9,10 @@ One-piece soft case for the Cowon Plenue D (53.3 x 77.0 x 14.9 mm; 77.5 with the
 ## Design
 
 - 2 mm wall on every face except the screen.
-- Front lip stands 1 mm above the glass and leans 0.5 mm inward to hold the player. The outer side curves smoothly into the lip. At the top, the front cover hides the whole metal cap band (3.4 mm).
+- Front lip: the inner face leaves the glass at 45 degrees and reaches 2 mm over the screen edge; the top is a half round of radius 2, so the lip stands 4 mm above the glass. Triangular guards with 5 mm legs cover the four screen corners.
 - Keys are part of the case. Above and below each key band (screen up), an inner groove next to the key and an outer groove beyond it, offset from each other, fold the wall into an S with an even 1 mm thickness and smooth ramps. Slits perpendicular to the screen split the right side into five keys: vol +, vol -, play, next, prev. A shallow pocket inside the key band leaves room for the keys, which stand 0.4 mm proud.
 - The power key uses the same design as a side key: S fold between two slits. Seen from the front, the case outline steps up 0.6 mm over the power block to clear the knob (0.5 mm proud).
-- Headphone and USB openings are larger than the ports. The microSD slot is covered.
+- Headphone and USB openings are larger than the ports and have flat tops with 60 degree sides, so they print as bridges without support. The microSD slot is covered.
 - Every edge is rounded, except the openings and slits.
 
 ## Printing

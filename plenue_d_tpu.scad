@@ -1,6 +1,8 @@
 // Cowon Plenue D soft case, one piece, printed in TPU.
-// Wraps every face except the screen; the front lip stands 1 mm proud of the
-// glass and leans 0.5 mm inward. Keys are part of the case, separated by slits.
+// Wraps every face except the screen. The front lip leans over the glass at 45
+// degrees and is rounded on top; triangular guards cover the four corners. Keys
+// are part of the case, separated by slits. Openings have flat tops so they
+// print as bridges, without support.
 //
 //   openscad -o plenue_d_tpu.stl plenue_d_tpu.scad
 //
@@ -48,17 +50,19 @@ key_h     = 3.2;
 // ---------------------------------------------------------------- case
 fit   = 0.1;                 // per side; TPU stretches over the player
 wall  = 2.0;
-lip_h = 1.0;                 // lip height above the screen
-lip_in = 0.5;                // how far the lip leans over the screen edge
+// Lip cross-section: the inner face leaves the glass at 45 degrees and reaches
+// lip_r over the screen edge at lip_r above the glass; the top is a half round of
+// radius lip_r centered on the cavity wall, so the lip stands 2 * lip_r tall
+// and 2 * lip_r wide (wall + overhang).
+lip_r  = 2.0;
+guard_leg = 5.0;             // corner guards: right triangles, legs along the opening
 back_r = 2.0;                // rounding of the back edges
-lip_blend_h  = 3.0;          // outer side curves in over this height below the lip top
-lip_blend_in = 1.2;          // ... and ends this far in, tangent to the lip top
-lip_ri = 0.6;                // rounding of the inner lip edge
 cav_r  = 1.0;                // rounding inside the back edges
 
-jack_open = 8.0;             // diameter, original hole is ~4.9
-usb_open  = [12.0, 7.5];     // x, z; room for the plug overmold
-usb_open_r = 2.0;
+// Openings print as bridges: flat top (toward the screen), sides no steeper
+// than 60 degrees from horizontal.
+jack_open = 8.0;             // circle diameter, original hole is ~4.9
+usb_open  = [12.0, 7.5];     // width at mid height, height; room for the plug overmold
 
 // Integrated keys. Along each key band the wall folds into an S: on both sides of
 // the band (screen up: above and below) an outer groove and an inner groove,
@@ -80,13 +84,11 @@ power_pad_w = 14.0;          // slit to slit
 power_raise = knob_proud + 0.1;
 raise_x0    = 35.2 * sx;     // power block seam, from the three-view
 
-// Front cover over the metal top cap (3.4 mm band at the top of the front face).
-cap_len = 3.4 * sy;
 
 // ---------------------------------------------------------------- derived
 cav0 = [-fit, -fit];
 cav1 = [dev.x + fit, dev.y + fit];
-top_z = dev.z + lip_h;
+glass_z = dev.z + fit;       // underside of the lip
 outer_x1 = cav1.x + wall;
 outer_y1 = cav1.y + wall + power_raise;   // top wall over the power block
 
@@ -122,37 +124,48 @@ function arc(c, r, a0, a1, n = 8) = [for (i = [0 : n]) let (a = a0 + (a1 - a0) *
     [c[0] + r * cos(a), c[1] + r * sin(a)]];
 
 // Outer profile, inset measured from the cavity outline grown by `wall`:
-// quarter round on the back edge, straight side, smooth curve into the lip top.
+// quarter round on the back edge, straight side, outer half of the lip round.
 outer_prof = concat(
     arc([back_r, -wall + back_r], back_r, 270, 180),
-    // quarter ellipse: leaves the side vertically, meets the lip top horizontally
-    [for (i = [0 : 16]) let (t = 90 * i / 16)
-        [lip_blend_in * (1 - cos(t)), top_z - lip_blend_h + lip_blend_h * sin(t)]]
+    arc([wall, glass_z + lip_r], lip_r, 180, 90)
 );
 
-// Cavity profile, inset measured from the cavity outline (negative grows).
-// Below the glass it follows the player; above, the opening (front_plan) leaves
-// the metal top cap covered.
+// Cavity profile below the glass, inset measured from the cavity outline.
 cav_prof = concat(
     arc([cav_r, cav_r], cav_r, 270, 180),
-    [[0, dev.z + fit]]
+    [[0, glass_z]]
 );
+
+// Lip opening, inset measured from lip_plan: 45 degree underside, then the
+// inner half of the lip round, then clear above.
 lip_prof = concat(
-    [[0, dev.z + fit - eps]],
-    [[lip_in, top_z - lip_ri]],
-    arc([lip_in - lip_ri, top_z - lip_ri], lip_ri, 0, 90),
-    [[lip_in - lip_ri - 1.5, top_z + 1]]
+    [[0, glass_z - eps]],
+    arc([0, glass_z + lip_r], lip_r, 0, 90),
+    [[-1, glass_z + 2 * lip_r + 1]]
 );
+
+// Leg on lip_plan that gives guard_leg on the opening edge after the 45 degree
+// underside moves it lip_r inward.
+plan_leg = guard_leg + lip_r * (2 - sqrt(2));
+
+// Cavity outline with the four corners cut off for the guards, corners rounded.
+module lip_plan() {
+    corners = [[[cav0.x, cav0.y], [1, 1]], [[cav1.x, cav0.y], [-1, 1]],
+               [[cav0.x, cav1.y], [1, -1]], [[cav1.x, cav1.y + power_raise], [-1, -1]]];
+    offset(r = 1) offset(r = -1) difference() {
+        cav_plan();
+        for (c = corners) let (p = c[0], d = c[1])
+            polygon([p - 2 * d, p + [d.x * (plan_leg + 2), -2 * d.y], p + [-2 * d.x, d.y * (plan_leg + 2)]]);
+    }
+}
 
 module outer() {
     sweep(outer_prof) outer_plan();
 }
 
-module front_plan() { rrect(cav0, [cav1.x, dev.y - cap_len], dev_r + fit); }
-
 module cavity() {
     sweep(cav_prof) cav_plan();
-    sweep(lip_prof) front_plan();
+    sweep(lip_prof) lip_plan();
 }
 
 // ---------------------------------------------------------------- integrated keys
@@ -229,11 +242,32 @@ module key_nubs() {
 }
 
 // ---------------------------------------------------------------- openings
+// Round hole with a flat top: 60 degree tangents from the circle up to a flat
+// at the top of the circle.
+module jack_shape(d) {
+    r = d / 2;
+    circle(r = r);
+    polygon([[-r * cos(30), r / 2], [r * cos(30), r / 2],
+             [r * tan(30), r], [-r * tan(30), r]]);
+}
+
+// Flat top and bottom; sides are arcs meeting them at 60 degrees.
+module usb_shape(size) {
+    w = size[0]; h = size[1];
+    R = h;                   // arc radius that meets the flats at 60 degrees
+    intersection() {
+        square([w + 2, h], center = true);
+        translate([w / 2 - R, 0]) circle(r = R, $fn = 128);
+        translate([-w / 2 + R, 0]) circle(r = R, $fn = 128);
+    }
+}
+
+// 2D (a, b) drawn in the end wall: a along x, b along z (toward the screen).
 module openings() {
-    translate([jack_x, cav1.y - 1, jack_z]) rotate([-90, 0, 0])
-        cylinder(d = jack_open, h = wall + 3);
-    translate([usb_x, cav0.y + 1, usb_z]) rotate([90, 0, 0]) linear_extrude(wall + 3)
-        rrect(-usb_open / 2, usb_open / 2, usb_open_r);
+    translate([jack_x, outer_y1 + 1, jack_z]) rotate([90, 0, 0])
+        linear_extrude(outer_y1 - cav1.y + 3) jack_shape(jack_open);
+    translate([usb_x, cav0.y + 1, usb_z]) rotate([90, 0, 0])
+        linear_extrude(wall + 3) usb_shape(usb_open);
 }
 
 // ---------------------------------------------------------------- case
